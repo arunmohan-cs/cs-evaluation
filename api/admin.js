@@ -4,6 +4,7 @@ const SHEET_ID = process.env.SHEET_ID;
 const TAB = 'Responses';
 const ADMIN_EMAIL = 'admin@anywhere.co';
 const ADMIN_PASS = process.env.ADMIN_PASSWORD || 'adminarun123$';
+const TT_SECONDS = 2700; // 45 minutes — must match TT in index.html
 
 // Row layout:
 // A=Email, B=Name, C=StartTime, D=SubmitTime, E=Status,
@@ -47,7 +48,24 @@ export default async function handler(req, res) {
       if (statusUp === 'SUBMITTED' || statusUp === 'AUTO_SUBMITTED') {
         submitted.push({ email, name, startTime, submitTime, mcqScore, caseScore, totalScore, passed, date, submitType: statusUp });
       } else if (statusUp === 'STARTED') {
-        started.push({ email, name, startTime });
+        const elapsed = startTime
+          ? Math.floor((Date.now() - new Date(startTime)) / 1000)
+          : 0;
+        if (elapsed >= TT_SECONDS) {
+          // Timer has expired server-side — treat as auto-submitted (browser never fired)
+          submitted.push({
+            email, name, startTime,
+            submitTime: null,
+            mcqScore: mcqScore || '0',
+            caseScore: caseScore || '0',
+            totalScore: totalScore || '0',
+            passed: 'NO',
+            date: null,
+            submitType: 'AUTO_SUBMITTED',
+          });
+        } else {
+          started.push({ email, name, startTime });
+        }
       }
     }
 
