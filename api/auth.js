@@ -65,8 +65,8 @@ export default async function handler(req, res) {
       submitted: status === 'SUBMITTED',
       name: match[1] || '',
       startTime: match[2] || null,
-      mcqAnswers: (() => { try { return match[10] ? JSON.parse(match[10]) : null; } catch(e) { return null; } })(),
-      caseAnswers: (() => { try { return match[11] ? JSON.parse(match[11]) : null; } catch(e) { return null; } })(),
+      mcqAnswers: match[10] || null,
+      caseAnswers: match[11] || null,
       meetLink,
     });
   } catch (err) {
