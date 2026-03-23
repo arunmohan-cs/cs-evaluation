@@ -33,7 +33,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { email, name, action, startTime, mcqScore, caseScore, totalScore, passed, date, mcqAnswers, caseAnswers } =
+  const { email, name, action, startTime, mcqScore, caseScore, totalScore, passed, date, mcqAnswers, caseAnswers, submitType } =
     req.body || {};
 
   if (!email || !action) {
@@ -68,7 +68,7 @@ export default async function handler(req, res) {
         name || '',
         startTime || submitTime,
         submitTime,
-        'SUBMITTED',
+        submitType === 'AUTO_SUBMITTED' ? 'AUTO_SUBMITTED' : 'SUBMITTED',
         mcqScore ?? '',
         caseScore ?? '',
         totalScore ?? '',
