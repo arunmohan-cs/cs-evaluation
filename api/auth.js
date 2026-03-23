@@ -31,16 +31,17 @@ export default async function handler(req, res) {
     // 1. Check Authenticated Users tab — is this person allowed to take the test?
     const allowedResult = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEET_ID,
-      range: `${ALLOWED_TAB}!A:A`,
+      range: `${ALLOWED_TAB}!A:B`,
     });
     const allowedRows = allowedResult.data.values || [];
-    const isAuthorized = allowedRows.some(
+    const allowedRow = allowedRows.find(
       (row) => (row[0] || '').toLowerCase() === email.toLowerCase()
     );
 
-    if (!isAuthorized) {
+    if (!allowedRow) {
       return res.status(200).json({ authorized: false, exists: false, started: false, submitted: false });
     }
+    const meetLink = allowedRow[1] || null;
 
     // 2. Check Responses tab — have they already started or submitted?
     const responsesResult = await sheets.spreadsheets.values.get({
@@ -53,7 +54,7 @@ export default async function handler(req, res) {
     );
 
     if (!match) {
-      return res.status(200).json({ authorized: true, exists: false, started: false, submitted: false });
+      return res.status(200).json({ authorized: true, exists: false, started: false, submitted: false, meetLink });
     }
 
     const status = (match[4] || '').toUpperCase();
@@ -66,6 +67,7 @@ export default async function handler(req, res) {
       startTime: match[2] || null,
       mcqAnswers: (() => { try { return match[10] ? JSON.parse(match[10]) : null; } catch(e) { return null; } })(),
       caseAnswers: (() => { try { return match[11] ? JSON.parse(match[11]) : null; } catch(e) { return null; } })(),
+      meetLink,
     });
   } catch (err) {
     console.error('auth error:', err.message);
