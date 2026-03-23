@@ -44,8 +44,8 @@ export default async function handler(req, res) {
       const [email, name, startTime, submitTime, status, mcqScore, caseScore, totalScore, passed, date] = row;
       const statusUp = (status || '').toUpperCase();
 
-      if (statusUp === 'SUBMITTED') {
-        submitted.push({ email, name, startTime, submitTime, mcqScore, caseScore, totalScore, passed, date });
+      if (statusUp === 'SUBMITTED' || statusUp === 'AUTO_SUBMITTED') {
+        submitted.push({ email, name, startTime, submitTime, mcqScore, caseScore, totalScore, passed, date, submitType: statusUp });
       } else if (statusUp === 'STARTED') {
         started.push({ email, name, startTime });
       }
