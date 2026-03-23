@@ -63,6 +63,7 @@ export default async function handler(req, res) {
       started: status === 'STARTED' || status === 'SUBMITTED',
       submitted: status === 'SUBMITTED',
       name: match[1] || '',
+      startTime: match[2] || null,
     });
   } catch (err) {
     console.error('auth error:', err.message);
