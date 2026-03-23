@@ -1,7 +1,11 @@
 import { google } from 'googleapis';
 
 const SHEET_ID = process.env.SHEET_ID;
-const TAB = 'Responses';
+const RESPONSES_TAB = 'Responses';
+const ALLOWED_TAB = 'Authenticated Users';
+
+// Responses row layout (0-indexed cols):
+// A=Email, B=Name, C=StartTime, D=SubmitTime, E=Status, ...
 
 function getAuth() {
   return new google.auth.JWT({
@@ -10,9 +14,6 @@ function getAuth() {
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
 }
-
-// Row layout (0-indexed cols):
-// A=Email, B=Name, C=StartTime, D=SubmitTime, E=Status, F=MCQScore, G=CaseScore, H=TotalScore, I=Passed, J=Date
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -26,22 +27,38 @@ export default async function handler(req, res) {
 
   try {
     const sheets = google.sheets({ version: 'v4', auth: getAuth() });
-    const result = await sheets.spreadsheets.values.get({
-      spreadsheetId: SHEET_ID,
-      range: `${TAB}!A:E`,
-    });
 
-    const rows = result.data.values || [];
+    // 1. Check Authenticated Users tab — is this person allowed to take the test?
+    const allowedResult = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: `${ALLOWED_TAB}!A:A`,
+    });
+    const allowedRows = allowedResult.data.values || [];
+    const isAuthorized = allowedRows.some(
+      (row) => (row[0] || '').toLowerCase() === email.toLowerCase()
+    );
+
+    if (!isAuthorized) {
+      return res.status(200).json({ authorized: false, exists: false, started: false, submitted: false });
+    }
+
+    // 2. Check Responses tab — have they already started or submitted?
+    const responsesResult = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: `${RESPONSES_TAB}!A:E`,
+    });
+    const rows = responsesResult.data.values || [];
     const match = rows.find(
       (row) => (row[0] || '').toLowerCase() === email.toLowerCase()
     );
 
     if (!match) {
-      return res.status(200).json({ exists: false, started: false, submitted: false });
+      return res.status(200).json({ authorized: true, exists: false, started: false, submitted: false });
     }
 
     const status = (match[4] || '').toUpperCase();
     return res.status(200).json({
+      authorized: true,
       exists: true,
       started: status === 'STARTED' || status === 'SUBMITTED',
       submitted: status === 'SUBMITTED',
