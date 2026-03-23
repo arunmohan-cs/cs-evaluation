@@ -33,7 +33,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { email, name, action, startTime, mcqScore, caseScore, totalScore, passed, date, mcqAnswers, caseAnswers, submitType } =
+  const { email, name, action, startTime, mcqScore, caseScore, totalScore, passed, date, mcqAnswers, caseAnswers, submitType, mcqIncorrect, csIncorrect } =
     req.body || {};
 
   if (!email || !action) {
@@ -76,19 +76,21 @@ export default async function handler(req, res) {
         date || submitTime,
         mcqAnswers ? JSON.stringify(mcqAnswers) : '',
         caseAnswers ? JSON.stringify(caseAnswers) : '',
+        mcqIncorrect || '',
+        csIncorrect || '',
       ];
 
       if (rowNum !== -1) {
         await sheets.spreadsheets.values.update({
           spreadsheetId: SHEET_ID,
-          range: `${TAB}!A${rowNum}:L${rowNum}`,
+          range: `${TAB}!A${rowNum}:N${rowNum}`,
           valueInputOption: 'USER_ENTERED',
           requestBody: { values: [row] },
         });
       } else {
         await sheets.spreadsheets.values.append({
           spreadsheetId: SHEET_ID,
-          range: `${TAB}!A:L`,
+          range: `${TAB}!A:N`,
           valueInputOption: 'USER_ENTERED',
           requestBody: { values: [row] },
         });
