@@ -45,7 +45,7 @@ export default async function handler(req, res) {
     // 2. Check Responses tab — have they already started or submitted?
     const responsesResult = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEET_ID,
-      range: `${RESPONSES_TAB}!A:E`,
+      range: `${RESPONSES_TAB}!A:L`,
     });
     const rows = responsesResult.data.values || [];
     const match = rows.find(
@@ -64,6 +64,8 @@ export default async function handler(req, res) {
       submitted: status === 'SUBMITTED',
       name: match[1] || '',
       startTime: match[2] || null,
+      mcqAnswers: (() => { try { return match[10] ? JSON.parse(match[10]) : null; } catch(e) { return null; } })(),
+      caseAnswers: (() => { try { return match[11] ? JSON.parse(match[11]) : null; } catch(e) { return null; } })(),
     });
   } catch (err) {
     console.error('auth error:', err.message);

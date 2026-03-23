@@ -96,6 +96,23 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
+    if (action === 'autosave') {
+      const rowNum = await findRow(sheets, email);
+      if (rowNum === -1) return res.status(200).json({ ok: true });
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SHEET_ID,
+        range: `${TAB}!K${rowNum}:L${rowNum}`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: {
+          values: [[
+            mcqAnswers ? JSON.stringify(mcqAnswers) : '',
+            caseAnswers ? JSON.stringify(caseAnswers) : '',
+          ]],
+        },
+      });
+      return res.status(200).json({ ok: true });
+    }
+
     return res.status(400).json({ error: 'Unknown action' });
   } catch (err) {
     console.error('submit error:', err.message);
